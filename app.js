@@ -34,29 +34,6 @@ function dRoll(sides, dice){
   return rollsMsg + "-> Total: " + rollsTotal.toString()
 }
 
-function getGfyKey() {
-  const getKey = axios({
-    method: 'post',
-    // url: config.gfyAuthUrl,
-    url: process.env.gfyAuthUrl,
-    data: {
-      "grant_type": "client_credentials",
-      // "client_id": config.gfyBody["client_id"],
-      "client_id": process.env.gfyClientId,
-      // "client_secret": config.gfyBody["client_secret"]
-      "client_secret": process.env.gfyClientSecret
-    }
-  })
-  .then(function(response){
-    const gfyKey = response.data.access_token
-    // config.gfyKey = gfyKey
-    process.env.gfyKey = gfyKey
-  })
-  .catch(function(response){
-    console.log(response)
-  });
-}
-
 function randomArrayIndex(array) {
   return parseInt(Math.random() * array.length -1)
 }
