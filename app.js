@@ -221,4 +221,5 @@ client.on('message', message => {
   // }
 });
 // const login = config.clientLogin
-// client.login(login)
+const login = process.env.loginKey
+client.login(login)
