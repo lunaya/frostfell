@@ -226,7 +226,8 @@ client.on('message', message => {
         }
         else{
           const booruId = response.data[randomArrayIndex(response.data)].id
-          message.channel.sendMessage(config.booruPostUrl + booruId)
+          // message.channel.sendMessage(config.booruPostUrl + booruId)
+          message.channel.sendMessage(process.env.booruPostUrl + booruId)
         }
       })
       .catch(function(response){
