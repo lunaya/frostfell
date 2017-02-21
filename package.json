@@ -5,6 +5,7 @@
   "main": "./src/index",
   "types": "./typings/index.d.ts",
   "scripts": {
+    "start": "node app.js",
     "test": "npm run lint && npm run docs:test",
     "docs": "docgen --source src --custom docs/index.yml --output docs/docs.json",
     "docs:test": "docgen --source src --custom docs/index.yml",
