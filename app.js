@@ -1,13 +1,9 @@
 const Discord = require('discord.js')
 const axios = require('axios')
 const client = new Discord.Client()
-// const Config = require('./config.js')
-// const config = Config
-
 
 client.on('ready', () => {
   console.log('I am ready!')
-  let gfyKey = 0
 });
 
 function isNormalInteger(str) {
@@ -70,13 +66,15 @@ client.on('message', message => {
     const searchTerms = regex(msgArray, "-")
     console.log(searchTerms)
 
+  
+
     const getGfyLink = axios({
       method: 'get',
       // url: config.gfyGetUrl + searchTerms,
       url: process.env.gfyGetUrl + searchTerms,
       headers: {
         // "Authorization": "Bearer " + config.gfyKey,
-        "Authorization": "Bearer " + gfyKey,
+        "Authorization": "Bearer " + process.env.gfyKey,
       }
     })
     .then(function(response){
@@ -106,6 +104,7 @@ client.on('message', message => {
       .then(function(response){
 
         const gfyKey = response.data.access_token
+        process.env.gfyKey = gfyKey
         // config.gfyKey = gfyKey
 
         const getGfyLink = axios({
@@ -114,7 +113,7 @@ client.on('message', message => {
           url: process.env.gfyGetUrl + searchTerms,
           headers: {
             // "Authorization": "Bearer " + config.gfyKey,
-            "Authorization": "Bearer " + gfyKey,
+            "Authorization": "Bearer " + process.env.gfyKey,
           }
         })
         .then(function(response){
