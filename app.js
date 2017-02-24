@@ -1,10 +1,29 @@
 const Discord = require('discord.js')
 const axios = require('axios')
 const client = new Discord.Client()
+const TwitchList = require('./twitchlist.js')
+const twitchList = TwitchList
 
 client.on('ready', () => {
   console.log('I am ready!')
+  twitchPoller()
 });
+
+(function twitchPoller(){
+  setTimeout(function(){
+    axios({
+      method: 'get',
+      url: process.env.twitchGetUrl + twitchList.users,
+      headers: {
+        "client-id": process.env.twitchClientId
+      }
+    })
+    .then(function(response){
+
+    })
+  })
+
+})();
 
 function isNormalInteger(str) {
     var n = Math.floor(Number(str))
@@ -39,6 +58,10 @@ client.on('message', message => {
   var msgArray = message.content.split(" ")
   var firstWord = msgArray[0]
 
+  if (firstWord === '/test') {
+    message.guild.channels.find("loop", "#loop").sendMessage("nyan");
+  }
+
   if (firstWord === '/halp') {
     message.channel.sendMessage("Hi!  I'm frostfell :D  I'm wings' bot!  I can do many things!!")
     message.channel.sendMessage("Use /gif + words (underscores for phrases, spaces for separate tags) to find a random gif! ex: /gif rocket_league, /gif cats dogs" )
@@ -70,10 +93,8 @@ client.on('message', message => {
 
     const getGfyLink = axios({
       method: 'get',
-      // url: config.gfyGetUrl + searchTerms,
       url: process.env.gfyGetUrl + searchTerms,
       headers: {
-        // "Authorization": "Bearer " + config.gfyKey,
         "Authorization": "Bearer " + process.env.gfyKey,
       }
     })
@@ -91,13 +112,10 @@ client.on('message', message => {
 
       const getKey = axios({
         method: 'post',
-        // url: config.gfyAuthUrl,
         url: process.env.gfyAuthUrl,
         data: {
           "grant_type": "client_credentials",
-          // "client_id": config.gfyBody["client_id"],
           "client_id": process.env.gfyClientId,
-          // "client_secret": config.gfyBody["client_secret"]
           "client_secret": process.env.gfyClientSecret
         }
       })
@@ -105,14 +123,11 @@ client.on('message', message => {
 
         const gfyKey = response.data.access_token
         process.env.gfyKey = gfyKey
-        // config.gfyKey = gfyKey
 
         const getGfyLink = axios({
           method: 'get',
-          // url: config.gfyGetUrl + searchTerms,
           url: process.env.gfyGetUrl + searchTerms,
           headers: {
-            // "Authorization": "Bearer " + config.gfyKey,
             "Authorization": "Bearer " + process.env.gfyKey,
           }
         })
@@ -173,12 +188,10 @@ client.on('message', message => {
 
       const getLewds = axios({
         method: 'get',
-        // url: config.booruGetUrl + searchTerms,
         url: process.env.booruGetUrl + searchTerms,
       })
       .then(function(response){
         const booruId = response.data[randomArrayIndex(response.data)].id
-        // message.channel.sendMessage(config.booruPostUrl + booruId)
         message.channel.sendMessage(process.env.booruPostUrl + booruId)
       })
       .catch(function(response){
@@ -193,7 +206,6 @@ client.on('message', message => {
       
       const getLewds = axios({
         method: 'get',
-        // url: config.booruGetUrl + searchTerms,
         url: process.env.booruGetUrl + searchTerms,
       })
       .then(function(response){
@@ -202,7 +214,6 @@ client.on('message', message => {
         }
         else{
           const booruId = response.data[randomArrayIndex(response.data)].id
-          // message.channel.sendMessage(config.booruPostUrl + booruId)
           message.channel.sendMessage(process.env.booruPostUrl + booruId)
         }
       })
@@ -212,6 +223,6 @@ client.on('message', message => {
     }
   }
 });
-// const login = config.clientLogin
+
 const login = process.env.loginKey
 client.login(login)
