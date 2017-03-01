@@ -6,24 +6,24 @@ const twitchList = TwitchList
 
 client.on('ready', () => {
   console.log('I am ready!')
-  twitchPoller()
+  // twitchPoller()
 });
 
-(function twitchPoller(){
-  setTimeout(function(){
-    axios({
-      method: 'get',
-      url: process.env.twitchGetUrl + twitchList.users,
-      headers: {
-        "client-id": process.env.twitchClientId
-      }
-    })
-    .then(function(response){
+// (function twitchPoller(){
+//   setTimeout(function(){
+//     axios({
+//       method: 'get',
+//       url: process.env.twitchGetUrl + twitchList.users,
+//       headers: {
+//         "client-id": process.env.twitchClientId
+//       }
+//     })
+//     .then(function(response){
 
-    })
-  })
+//     })
+//   })
 
-})();
+// })();
 
 function isNormalInteger(str) {
     var n = Math.floor(Number(str))
@@ -59,7 +59,7 @@ client.on('message', message => {
   var firstWord = msgArray[0]
 
   if (firstWord === '/test') {
-    message.guild.channels.find("loop", "#loop").sendMessage("nyan");
+    message.guild.channels.find("loop", "#frostfell_no").sendMessage("nyan");
   }
 
   if (firstWord === '/halp') {
@@ -72,11 +72,9 @@ client.on('message', message => {
     message.channel.sendMessage('boop')
   }
 
-  if (firstWord === 'haha') {
-    message.channel.sendMessage('XD!')
+  if (firstWord === 'frostfell') {
+    message.channel.sendMessage(':<!')
   }
-
-  
 
   if (firstWord === '/dc') {
     message.channel.sendMessage('goodbye ;o;!')
