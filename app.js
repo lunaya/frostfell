@@ -45,7 +45,7 @@ function dRoll(sides, dice){
     const thisRoll = roller(sides)
     rollsMsg += "[" + thisRoll + "]  "
     rollsTotal += thisRoll
-    console.log(rollsTotal)
+    // console.log(rollsTotal)
   }
   return rollsMsg + "-> Total: " + rollsTotal.toString()
 }
@@ -76,18 +76,16 @@ client.on('message', message => {
     message.channel.sendMessage(':<!')
   }
 
-  if (firstWord === '/dc') {
-    message.channel.sendMessage('goodbye ;o;!')
-    client.destroy();
+  if (firstWord === ':raised_hands:') {
+    if (roller(3) === 3)
+      message.channel.sendMessage(':raised_hands:')
   }
 
   if (firstWord === '/gif') {
     msgArray.shift()
     msgArray.join('-')
     const searchTerms = regex(msgArray, "-")
-    console.log(searchTerms)
-
-  
+    // console.log(searchTerms)
 
     const getGfyLink = axios({
       method: 'get',
@@ -106,7 +104,7 @@ client.on('message', message => {
       }
     })
     .catch(function(response){
-      console.log("gfycat error, running key getter")
+      // console.log("gfycat error, running key getter")
 
       const getKey = axios({
         method: 'post',
@@ -193,7 +191,7 @@ client.on('message', message => {
         message.channel.sendMessage(process.env.booruPostUrl + booruId)
       })
       .catch(function(response){
-        console.log(response)
+        // console.log(response)
       })
     }
     else {
@@ -216,7 +214,7 @@ client.on('message', message => {
         }
       })
       .catch(function(response){
-        console.log(response)
+        // console.log(response)
       })
     }
   }
