@@ -1,21 +1,91 @@
 const Discord = require('discord.js')
 const axios = require('axios')
 const client = new Discord.Client()
-const TwitchList = require('./twitchlist.js')
-const twitchList = TwitchList
+const config = require('./config.js')
+// const TwitchList = require('./twitchlist.js')
+// const twitchList = TwitchList
 
-client.on('ready', () => {
-  console.log('I am ready!')
-  // twitchPoller()
-});
+
+//warframe items list
+const alertItems = [ "Orokin", "Nitain", "Forma", "Kavat" ]
+
+//poll warframe API every 10 minutes
+function warframePoller(channel){
+  setTimeout(function(){
+    axios({
+      method: 'get',
+      url: config.warframeGetUrl
+    })
+    .then(function(response){
+      console.log("then")
+      const alerts = response.data["Alerts"]
+      let finalOutput = ""
+
+      const alertArray = alerts.map(function(alert){
+        console.log("alerts array map")
+
+        //parse rewards
+        const reward = alert.MissionInfo.missionReward
+
+        //only do things if alert has any rewards
+        if (reward.items) {
+          console.log('yay')
+
+          // parse individual alert info
+          const mission = alert.MissionInfo.missionType.substring(3)
+          const level = (alert.MissionInfo.minEnemyLevel + alert.MissionInfo.maxEnemyLevel) / 2
+          const expireTime = alert.Expiry.$date.$numberLong
+          const minutesLeft = Math.round((expireTime - Date.now()) / 60 / 1000 )
+
+          let itemArray = []
+          reward.items.map(function(item){
+
+            //parse item name
+            const itemName = reward.items[0].substr(reward.items[0].lastIndexOf("/")+1)
+
+            console.log("checking items")
+            //check against important item list
+            alertItems.map(function(wantedItem){
+              if (itemName.indexOf(wantedItem) >= 0){
+                console.log('pushing')
+                itemArray.push(itemName)
+              }
+            })
+          })
+
+          //pushes the alert to finalOutput IF an item matches one we want
+          if (itemArray.length > 0){
+            const rewardOutput = itemArray.join(", ")
+            finalOutput += (mission + "[level " + level + "] - " + rewardOutput + " - " + minutesLeft + "m remaining\n")
+          }
+
+        }
+      })
+
+      //check to see if anything was pushed to final output - if so, broadcast
+      if (finalOutput.length >= 1){
+        console.log(finalOutput)
+        // channel.sendMessage(finalOutput)
+      }
+      //if not, then nothing important was found
+      else {
+        console.log("nothing important found")
+      }
+      
+      //recursively call again
+      warframePoller()
+    })
+  }, 15 *1000*60)//delay, in minutes *math
+}
+
 
 // (function twitchPoller(){
 //   setTimeout(function(){
 //     axios({
 //       method: 'get',
-//       url: process.env.twitchGetUrl + twitchList.users,
+//       url: config.twitchGetUrl + twitchList.users,
 //       headers: {
-//         "client-id": process.env.twitchClientId
+//         "client-id": config.twitchClientId
 //       }
 //     })
 //     .then(function(response){
@@ -62,82 +132,12 @@ client.on('message', message => {
     message.guild.channels.find("loop", "#frostfell_no").sendMessage("nyan");
   }
 
-  if (firstWord === '/halp') {
-    message.channel.sendMessage("Hi!  I'm frostfell :D  I'm wings' bot!  I can do many things!!")
-    message.channel.sendMessage("Use /gif + words (underscores for phrases, spaces for separate tags) to find a random gif! ex: /gif rocket_league, /gif cats dogs" )
-    message.channel.sendMessage("Use /rng (number optional) to generate a random number between 1-100, or the optional number you specify.  ex: /rng 10")
-    message.channel.sendMessage("Use /d (numbers optional) to roll one d20 die, where the optional numbers are sides and number of dice.  ex: /d 10 5 rolls 5 10-sided dice.")
-  }
   if (firstWord === 'beep') {
     message.channel.sendMessage('boop')
   }
 
   if (firstWord === 'frostfell') {
     message.channel.sendMessage(':<!')
-  }
-
-  if (firstWord === ':raised_hands:') {
-    if (roller(3) === 3)
-      message.channel.sendMessage(':raised_hands:')
-  }
-
-  if (firstWord === '/gif') {
-    msgArray.shift()
-    msgArray.join('-')
-    const searchTerms = regex(msgArray, "-")
-    // console.log(searchTerms)
-
-    const getGfyLink = axios({
-      method: 'get',
-      url: process.env.gfyGetUrl + searchTerms,
-      headers: {
-        "Authorization": "Bearer " + process.env.gfyKey,
-      }
-    })
-    .then(function(response){
-      if (!response.data.gfycats) {
-        message.channel.sendMessage("I couldn't find that! D:")
-      }
-      else{
-        const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
-        message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
-      }
-    })
-    .catch(function(response){
-      // console.log("gfycat error, running key getter")
-
-      const getKey = axios({
-        method: 'post',
-        url: process.env.gfyAuthUrl,
-        data: {
-          "grant_type": "client_credentials",
-          "client_id": process.env.gfyClientId,
-          "client_secret": process.env.gfyClientSecret
-        }
-      })
-      .then(function(response){
-
-        const gfyKey = response.data.access_token
-        process.env.gfyKey = gfyKey
-
-        const getGfyLink = axios({
-          method: 'get',
-          url: process.env.gfyGetUrl + searchTerms,
-          headers: {
-            "Authorization": "Bearer " + process.env.gfyKey,
-          }
-        })
-        .then(function(response){
-          if (!response.data.gfycats) {
-            message.channel.sendMessage("I couldn't find that! D:")
-          }
-          else{
-            const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
-            message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
-          }
-        })
-      })
-    })
   }
 
   if (firstWord === '/rng') {
@@ -178,17 +178,74 @@ client.on('message', message => {
     }
   }
 
+  if (firstWord === '/gif') {
+    msgArray.shift()
+    msgArray.join('-')
+    const searchTerms = regex(msgArray, "-")
+
+    const getGfyLink = axios({
+      method: 'get',
+      url: config.gfyGetUrl + searchTerms,
+      headers: {
+        "Authorization": "Bearer " + config.gfyKey,
+      }
+    })
+    .then(function(response){
+      if (!response.data.gfycats) {
+        message.channel.sendMessage("I couldn't find that! D:")
+      }
+      else{
+        const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+        message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
+      }
+    })
+    .catch(function(response){
+
+      const getKey = axios({
+        method: 'post',
+        url: config.gfyAuthUrl,
+        data: {
+          "grant_type": "client_credentials",
+          "client_id": config.gfyClientId,
+          "client_secret": config.gfyClientSecret
+        }
+      })
+      .then(function(response){
+
+        const gfyKey = response.data.access_token
+        config.gfyKey = gfyKey
+
+        const getGfyLink = axios({
+          method: 'get',
+          url: config.gfyGetUrl + searchTerms,
+          headers: {
+            "Authorization": "Bearer " + config.gfyKey,
+          }
+        })
+        .then(function(response){
+          if (!response.data.gfycats) {
+            message.channel.sendMessage("I couldn't find that! D:")
+          }
+          else{
+            const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+            message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
+          }
+        })
+      })
+    })
+  }
+
   if (firstWord === '/lewd') {
     if (!msgArray[1]) {
       const searchTerms = ""
 
       const getLewds = axios({
         method: 'get',
-        url: process.env.booruGetUrl + searchTerms,
+        url: config.booruGetUrl + searchTerms,
       })
       .then(function(response){
         const booruId = response.data[randomArrayIndex(response.data)].id
-        message.channel.sendMessage(process.env.booruPostUrl + booruId)
+        message.channel.sendMessage(config.booruPostUrl + booruId)
       })
       .catch(function(response){
         // console.log(response)
@@ -202,7 +259,7 @@ client.on('message', message => {
       
       const getLewds = axios({
         method: 'get',
-        url: process.env.booruGetUrl + searchTerms,
+        url: config.booruGetUrl + searchTerms,
       })
       .then(function(response){
         if (response.data.length == 0){
@@ -210,7 +267,7 @@ client.on('message', message => {
         }
         else{
           const booruId = response.data[randomArrayIndex(response.data)].id
-          message.channel.sendMessage(process.env.booruPostUrl + booruId)
+          message.channel.sendMessage(config.booruPostUrl + booruId)
         }
       })
       .catch(function(response){
@@ -218,7 +275,16 @@ client.on('message', message => {
       })
     }
   }
+
 });
 
-const login = process.env.loginKey
+client.on('ready', () => {
+  console.log('I am ready!')
+  const warframeChannel = client.channels.get(config.warframeChannel)
+
+  // twitchPoller()
+  warframePoller(warframeChannel)
+});
+
+const login = config.loginKey
 client.login(login)
