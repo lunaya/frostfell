@@ -19,18 +19,18 @@ function warframePoller(channel){
     })
     .then(function(response){
       console.log("then")
+      // channel.sendMessage("got alerts")
       const alerts = response.data["Alerts"]
       let finalOutput = ""
 
       const alertArray = alerts.map(function(alert){
-        console.log("alerts array map")
+        // console.log("alerts array map")
 
         //parse rewards
         const reward = alert.MissionInfo.missionReward
 
         //only do things if alert has any rewards
         if (reward.items || reward.countedItems) {
-          console.log('yay')
 
           // parse individual alert info
           const mission = alert.MissionInfo.missionType.substring(3)
@@ -44,6 +44,7 @@ function warframePoller(channel){
 
           //read in "Items" contained in rewards (bp's, helmets)
           if (reward.items){
+            // channel.sendMessage("found items")
             reward.items.map(function(item){
               const thisItemName = item.substr(item.lastIndexOf("/")+1)
               itemArray.push(thisItemName)
@@ -78,16 +79,16 @@ function warframePoller(channel){
 
       //check to see if anything was pushed to final output - if so, broadcast
       if (finalOutput.length > 0){
-        // console.log(finalOutput)
-        warframeChannel.sendMessage(finalOutput)
+        channel.sendMessage(finalOutput)
       }
-      //if not, then nothing important was found
+
+      // if not, then nothing important was found
       else {
         console.log("nothing important found")
       }
       
       //recursively call again
-      warframePoller()
+      warframePoller(channel)
     })
   }, 30 *1000*60)//delay, in minutes *math
 }
@@ -298,7 +299,9 @@ client.on('ready', () => {
   const frostfellChannel = client.channels.get(config.frostfellChannel)
 
   // twitchPoller()
-  warframePoller(warframeChannel)
+  
+  //have to pass channel to async caller
+  warframePoller(frostfellChannel)
 });
 
 const login = config.loginKey
