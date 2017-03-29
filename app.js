@@ -7,7 +7,10 @@ const config = require('./config.js')
 
 
 //warframe items list
-const wantedItems = [ "Orokin", "Nitain", "Forma", "Kavat", "Helmet" ]
+const wantedItems = [ "Orokin", "Nitain", "Forma", "Kavat" ]
+
+//warframe alert id list 
+let alertIds = []
 
 //poll warframe API every 10 minutes
 function warframePoller(channel){
@@ -19,63 +22,79 @@ function warframePoller(channel){
     })
     .then(function(response){
       console.log("then")
-      // channel.sendMessage("got alerts")
       const alerts = response.data["Alerts"]
       let finalOutput = ""
 
       const alertArray = alerts.map(function(alert){
-        // console.log("alerts array map")
 
-        //parse rewards
-        const reward = alert.MissionInfo.missionReward
+        //get alert id
+        const thisAlertId = alert._id.$oid
 
-        //only do things if alert has any rewards
-        if (reward.items || reward.countedItems) {
+        //check unique alert list for existing id
+        if (!(alertIds.indexOf(thisAlertId) > -1)){
+          //add alert id to alerts array.  delete earliest id if array is 'full' at 10 numbers
+          alertIds.push(thisAlertId)
 
-          // parse individual alert info
-          const mission = alert.MissionInfo.missionType.substring(3)
-          const level = (alert.MissionInfo.minEnemyLevel + alert.MissionInfo.maxEnemyLevel) / 2
-          const expireTime = alert.Expiry.$date.$numberLong
-          const minutesLeft = Math.round((expireTime - Date.now()) / 60 / 1000 )
-
-          //create arrays
-          let itemArray = []
-          let outputArray = []
-
-          //read in "Items" contained in rewards (bp's, helmets)
-          if (reward.items){
-            // channel.sendMessage("found items")
-            reward.items.map(function(item){
-              const thisItemName = item.substr(item.lastIndexOf("/")+1)
-              itemArray.push(thisItemName)
-            })
+          if(alertIds.length > 10){
+            alertIds.shift()
           }
 
-          //read in "countedItems" contained in rewards (numbers of mats)
-          if (reward.countedItems) {
-            reward.countedItems.map(function(item){
-              const thisItemName = item.ItemType.substr(item.ItemType.lastIndexOf("/")+1) + "[" + item.ItemCount.toString() + "]"
-              itemArray.push(thisItemName)
+          //parse rewards
+          const reward = alert.MissionInfo.missionReward
+
+          //only do things if alert has any rewards
+          if (reward.items || reward.countedItems){
+
+            // parse individual alert info
+            const mission = alert.MissionInfo.missionType.substring(3)
+            const level = (alert.MissionInfo.minEnemyLevel + alert.MissionInfo.maxEnemyLevel) / 2
+            const expireTime = alert.Expiry.$date.$numberLong
+            const minutesLeft = Math.round((expireTime - Date.now()) / 60 / 1000 )
+
+            //create arrays
+            let itemArray = []
+            let outputArray = []
+
+            //read in "Items" contained in rewards (bp's, helmets)
+            if (reward.items){
+              reward.items.map(function(item){
+                const thisItemName = item.substr(item.lastIndexOf("/")+1)
+                itemArray.push(thisItemName)
+              })
+            }
+
+            //read in "countedItems" contained in rewards (numbers of mats)
+            if (reward.countedItems){
+              reward.countedItems.map(function(item){
+                const thisItemName = item.ItemType.substr(item.ItemType.lastIndexOf("/")+1) + "[" + item.ItemCount.toString() + "]"
+                itemArray.push(thisItemName)
+              })
+            }
+
+            //compare full list of this one alert's items against ones we want
+            itemArray.map(function(alertItem){
+              wantedItems.map(function(wantedItem){
+                if(alertItem.includes(wantedItem)){
+                  outputArray.push(alertItem)
+                }
+              })
             })
-          }
 
-          //compare full list of this one alert's items against ones we want
-          itemArray.map(function(alertItem){
-            wantedItems.map(function(wantedItem){
-              if(alertItem.includes(wantedItem)){
-                outputArray.push(alertItem)
-              }
-            })
-          })
+            //simply adds a message to the final output if it exists
+            if (outputArray.length > 0){
+              const rewardOutput = outputArray.join(", ")
+              finalOutput += (mission + "[level " + level + "] - " + rewardOutput + " - " + minutesLeft + "m remaining\n")
+            }
 
-          //simply adds a message to the final output if it exists
-          if (outputArray.length > 0){
-            const rewardOutput = outputArray.join(", ")
-            finalOutput += (mission + "[level " + level + "] - " + rewardOutput + " - " + minutesLeft + "m remaining\n")
-          }
-
+          }//end of things to do if reward items exist
+        }//end of if alert ID is new
+        else {
+          console.log("neat")
         }
-      })
+
+
+      }) //end of alerts.map
+      console.log(alertIds)
 
       //check to see if anything was pushed to final output - if so, broadcast
       if (finalOutput.length > 0){
@@ -89,26 +108,11 @@ function warframePoller(channel){
       
       //recursively call again
       warframePoller(channel)
-    })
-  }, 30 *1000*60)//delay, in minutes *math
-}
 
+    }) //end of axios
+  }, 10 *1000*60)//delay, in minutes *math  //end of setTimeout
+} //end of warframepoller
 
-// (function twitchPoller(){
-//   setTimeout(function(){
-//     axios({
-//       method: 'get',
-//       url: config.twitchGetUrl + twitchList.users,
-//       headers: {
-//         "client-id": config.twitchClientId
-//       }
-//     })
-//     .then(function(response){
-
-//     })
-//   })
-
-// })();
 
 function isNormalInteger(str) {
     var n = Math.floor(Number(str))
@@ -297,11 +301,9 @@ client.on('ready', () => {
   console.log('I am ready!')
   const warframeChannel = client.channels.get(config.warframeChannel)
   const frostfellChannel = client.channels.get(config.frostfellChannel)
-
-  // twitchPoller()
   
   //have to pass channel to async caller
-  warframePoller(frostfellChannel)
+  warframePoller(warframeChannel)
 });
 
 const login = config.loginKey
