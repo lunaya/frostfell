@@ -7,7 +7,7 @@ const config = require('./config.js')
 
 
 //warframe items list
-const wantedItems = [ "Orokin", "Alertium", "Forma", "Kavat" ] //alertium = nitain
+const wantedItems = [ "Orokin", "Alertium", "Forma", "Catbrow" ] //alertium = nitain, Catbrow = Kavat
 
 //warframe alert id list 
 let alertIds = []
