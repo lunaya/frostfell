@@ -144,155 +144,148 @@ function randomArrayIndex(array) {
 }
 
 client.on('message', message => {
-  var msgArray = message.content.split(" ")
-  var firstWord = msgArray[0]
+  //act only if slash command - saves processing of every message
+  if (message.content.charAt(0) === '/'){
 
-  if (firstWord === '/test') {
-    message.guild.channels.find("loop", "#frostfell_no").sendMessage("nyan");
-  }
+    var msgArray = message.content.split(" ")
+    var firstWord = msgArray[0]
 
-  if (firstWord === 'beep') {
-    message.channel.sendMessage('boop')
-  }
-
-  if (firstWord === 'frostfell') {
-    message.channel.sendMessage(':<!')
-  }
-
-  if (firstWord === '/rng') {
-    if (msgArray[1]){
-      if (isNormalInteger(msgArray[1]) === false){
-        message.channel.sendMessage("I can't roll this D:")
-      }
-      else {
-        message.channel.sendMessage('ROLL ' + msgArray[1] + '! -> ' + roller(msgArray[1]))
-      }      
-    }
-    else {
-      message.channel.sendMessage('ROLL 100! -> ' + roller(100))
-    }
-  }
-
-  if (firstWord === '/d') {
-    if (!msgArray[1]){
-      message.channel.sendMessage('Rolling 1d20 -> ' + roller(20))
-    }
-    else {
-      if (isNormalInteger(msgArray[1]) === false){
-        message.channel.sendMessage("I can't roll this D:")
-      }
-      else {
-        if (!msgArray[2]){
-          message.channel.sendMessage(dRoll(msgArray[1], 1))
+    if (firstWord === '/rng') {
+      if (msgArray[1]){
+        if (isNormalInteger(msgArray[1]) === false){
+          message.channel.sendMessage("I can't roll this D:")
         }
         else {
-          if (isNormalInteger(msgArray[2]) === false){
-            message.channel.sendMessage("I can't roll this D:")
+          message.channel.sendMessage('ROLL ' + msgArray[1] + '! -> ' + roller(msgArray[1]))
+        }      
+      }
+      else {
+        message.channel.sendMessage('ROLL 100! -> ' + roller(100))
+      }
+    }
+
+    if (firstWord === '/d') {
+      if (!msgArray[1]){
+        message.channel.sendMessage('Rolling 1d20 -> ' + roller(20))
+      }
+      else {
+        if (isNormalInteger(msgArray[1]) === false){
+          message.channel.sendMessage("I can't roll this D:")
+        }
+        else {
+          if (!msgArray[2]){
+            message.channel.sendMessage(dRoll(msgArray[1], 1))
           }
           else {
-            message.channel.sendMessage(dRoll(msgArray[1], msgArray[2]))
+            if (isNormalInteger(msgArray[2]) === false){
+              message.channel.sendMessage("I can't roll this D:")
+            }
+            else {
+              message.channel.sendMessage(dRoll(msgArray[1], msgArray[2]))
+            }
           }
         }
       }
     }
-  }
 
-  if (firstWord === '/gif') {
-    msgArray.shift()
-    msgArray.join('-')
-    const searchTerms = regex(msgArray, "-")
+    if (firstWord === '/gif') {
+      msgArray.shift()
+      msgArray.join('-')
+      const searchTerms = regex(msgArray, "-")
 
-    const getGfyLink = axios({
-      method: 'get',
-      url: config.gfyGetUrl + searchTerms,
-      headers: {
-        "Authorization": "Bearer " + config.gfyKey,
-      }
-    })
-    .then(function(response){
-      if (!response.data.gfycats) {
-        message.channel.sendMessage("I couldn't find that! D:")
-      }
-      else{
-        const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
-        message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
-      }
-    })
-    .catch(function(response){
-
-      const getKey = axios({
-        method: 'post',
-        url: config.gfyAuthUrl,
-        data: {
-          "grant_type": "client_credentials",
-          "client_id": config.gfyClientId,
-          "client_secret": config.gfyClientSecret
+      const getGfyLink = axios({
+        method: 'get',
+        url: config.gfyGetUrl + searchTerms,
+        headers: {
+          "Authorization": "Bearer " + config.gfyKey,
         }
       })
       .then(function(response){
+        if (!response.data.gfycats) {
+          message.channel.sendMessage("I couldn't find that! D:")
+        }
+        else{
+          const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+          message.channel.sendMessage(config.gfyUrl + gfyCatId)
+        }
+      })
+      .catch(function(response){
 
-        const gfyKey = response.data.access_token
-        config.gfyKey = gfyKey
-
-        const getGfyLink = axios({
-          method: 'get',
-          url: config.gfyGetUrl + searchTerms,
-          headers: {
-            "Authorization": "Bearer " + config.gfyKey,
+        const getKey = axios({
+          method: 'post',
+          url: config.gfyAuthUrl,
+          data: {
+            "grant_type": "client_credentials",
+            "client_id": config.gfyClientId,
+            "client_secret": config.gfyClientSecret
           }
         })
         .then(function(response){
-          if (!response.data.gfycats) {
-            message.channel.sendMessage("I couldn't find that! D:")
-          }
-          else{
-            const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
-            message.channel.sendMessage("https://gfycat.com/" + gfyCatId)
-          }
+
+          const gfyKey = response.data.access_token
+          config.gfyKey = gfyKey
+
+          const getGfyLink = axios({
+            method: 'get',
+            url: config.gfyGetUrl + searchTerms,
+            headers: {
+              "Authorization": "Bearer " + config.gfyKey,
+            }
+          })
+          .then(function(response){
+            if (!response.data.gfycats) {
+              message.channel.sendMessage("I couldn't find that! D:")
+            }
+            else{
+              const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+              message.channel.sendMessage(config.gfyUrl + gfyCatId)
+            }
+          })
         })
       })
-    })
-  }
-
-  if (firstWord === '/lewd') {
-    if (!msgArray[1]) {
-      const searchTerms = ""
-
-      const getLewds = axios({
-        method: 'get',
-        url: config.booruGetUrl + searchTerms,
-      })
-      .then(function(response){
-        const booruId = response.data[randomArrayIndex(response.data)].id
-        message.channel.sendMessage(config.booruPostUrl + booruId)
-      })
-      .catch(function(response){
-        // console.log(response)
-      })
     }
-    else {
-      msgArray.shift()
-      const searchTerms = msgArray.join('+')
 
-      console.log(searchTerms)
-      
-      const getLewds = axios({
-        method: 'get',
-        url: config.booruGetUrl + searchTerms,
-      })
-      .then(function(response){
-        if (response.data.length == 0){
-          message.channel.sendMessage("This tag doesn't exist D:a")
-        }
-        else{
+    if (firstWord === '/lewd') {
+      if (!msgArray[1]) {
+        const searchTerms = ""
+
+        const getLewds = axios({
+          method: 'get',
+          url: config.booruGetUrl + searchTerms,
+        })
+        .then(function(response){
           const booruId = response.data[randomArrayIndex(response.data)].id
           message.channel.sendMessage(config.booruPostUrl + booruId)
-        }
-      })
-      .catch(function(response){
-        // console.log(response)
-      })
+        })
+        .catch(function(response){
+          // console.log(response)
+        })
+      }
+      else {
+        msgArray.shift()
+        const searchTerms = msgArray.join('+')
+
+        console.log(searchTerms)
+        
+        const getLewds = axios({
+          method: 'get',
+          url: config.booruGetUrl + searchTerms,
+        })
+        .then(function(response){
+          if (response.data.length == 0){
+            message.channel.sendMessage("This tag doesn't exist D:a")
+          }
+          else{
+            const booruId = response.data[randomArrayIndex(response.data)].id
+            message.channel.sendMessage(config.booruPostUrl + booruId)
+          }
+        })
+        .catch(function(response){
+          // console.log(response)
+        })
+      }
     }
+
   }
 
 });
