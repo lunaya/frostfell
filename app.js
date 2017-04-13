@@ -150,6 +150,10 @@ client.on('message', message => {
     var msgArray = message.content.split(" ")
     var firstWord = msgArray[0]
 
+    if (firstWord === '/waifu') {
+      message.channel.sendMessage(config.waifu)
+    }
+
     if (firstWord === '/rng') {
       if (msgArray[1]){
         if (isNormalInteger(msgArray[1]) === false){
