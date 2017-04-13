@@ -114,7 +114,7 @@ function warframePoller(channel){
 } //end of warframepoller
 
 
-function isNormalInteger(str) {
+function isNormalInteger(str){
     var n = Math.floor(Number(str))
     return String(n) === str && n >= 0
 }
@@ -127,20 +127,20 @@ function roller(max){
   return Math.floor((Math.random() * max) + 1)
 }
 
+function rollFromZero(max){
+  return Math.floor((Math.random() * max))
+}
+
 function dRoll(sides, dice){
   let rollsMsg = "Rolling " + dice + "d" + sides + " -> ";
   var rollsTotal = 0;
-  for (var i=1 ; i <= dice ; i++) {
+  for (var i=1 ; i <= dice ; i++){
     const thisRoll = roller(sides)
     rollsMsg += "[" + thisRoll + "]  "
     rollsTotal += thisRoll
     // console.log(rollsTotal)
   }
   return rollsMsg + "-> Total: " + rollsTotal.toString()
-}
-
-function randomArrayIndex(array) {
-  return parseInt(Math.random() * array.length -1)
 }
 
 client.on('message', message => {
@@ -150,11 +150,11 @@ client.on('message', message => {
     var msgArray = message.content.split(" ")
     var firstWord = msgArray[0]
 
-    if (firstWord === '/waifu') {
+    if (firstWord === '/waifu'){
       message.channel.sendMessage(config.waifu)
     }
 
-    if (firstWord === '/rng') {
+    if (firstWord === '/rng'){
       if (msgArray[1]){
         if (isNormalInteger(msgArray[1]) === false){
           message.channel.sendMessage("I can't roll this D:")
@@ -168,7 +168,7 @@ client.on('message', message => {
       }
     }
 
-    if (firstWord === '/d') {
+    if (firstWord === '/d'){
       if (!msgArray[1]){
         message.channel.sendMessage('Rolling 1d20 -> ' + roller(20))
       }
@@ -192,11 +192,40 @@ client.on('message', message => {
       }
     }
 
-    if (firstWord === '/gif') {
+    if (firstWord === '/img'){
+      //parse search terms
+      msgArray.shift()
+      msgArray.join('-')
+      const searchTerms = regex(msgArray, "+")
+
+      //GET image from custom google search
+      const findImg = axios({
+        method: 'get',
+        url: config.imgSearchUrl + searchTerms,
+      })
+      .then(function(response){
+        const d = response.data
+        if (!d.items){
+          message.channel.sendMessage("I couldn't find that! D:")
+        }
+        else{
+          const imgUrl = d.items[rollFromZero(d.items.length - 1)].link
+          message.channel.sendMessage(imgUrl)
+        }
+
+      })
+      .catch(function(response){
+        console.log(response)
+      })
+    }
+
+    if (firstWord === '/gif'){
+      //parse search terms
       msgArray.shift()
       msgArray.join('-')
       const searchTerms = regex(msgArray, "-")
 
+      //GET gif from gfycat
       const getGfyLink = axios({
         method: 'get',
         url: config.gfyGetUrl + searchTerms,
@@ -205,11 +234,13 @@ client.on('message', message => {
         }
       })
       .then(function(response){
-        if (!response.data.gfycats) {
+        const d = response.data
+
+        if (!d.gfycats){
           message.channel.sendMessage("I couldn't find that! D:")
         }
         else{
-          const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+          const gfyCatId = d.gfycats[rollFromZero(d.gfycats.length - 1)].gfyId
           message.channel.sendMessage(config.gfyUrl + gfyCatId)
         }
       })
@@ -237,11 +268,13 @@ client.on('message', message => {
             }
           })
           .then(function(response){
-            if (!response.data.gfycats) {
+            const d = response.data
+
+            if (!d.gfycats){
               message.channel.sendMessage("I couldn't find that! D:")
             }
             else{
-              const gfyCatId = response.data.gfycats[randomArrayIndex(response.data.gfycats)].gfyId
+              const gfyCatId = d.gfycats[rollFromZero(d.gfycats.length - 1)].gfyId
               message.channel.sendMessage(config.gfyUrl + gfyCatId)
             }
           })
@@ -249,7 +282,7 @@ client.on('message', message => {
       })
     }
 
-    if (firstWord === '/lewd') {
+    if (firstWord === '/lewd'){
       if (!msgArray[1]) {
         const searchTerms = ""
 
@@ -258,11 +291,13 @@ client.on('message', message => {
           url: config.booruGetUrl + searchTerms,
         })
         .then(function(response){
-          const booruId = response.data[randomArrayIndex(response.data)].id
+          const d = response.data
+
+          const booruId = d[rollFromZero(d.length - 1)].id
           message.channel.sendMessage(config.booruPostUrl + booruId)
         })
         .catch(function(response){
-          // console.log(response)
+          console.log(response)
         })
       }
       else {
@@ -276,16 +311,15 @@ client.on('message', message => {
           url: config.booruGetUrl + searchTerms,
         })
         .then(function(response){
-          if (response.data.length == 0){
+          const d = response.data
+
+          if (d.length == 0){
             message.channel.sendMessage("This tag doesn't exist D:a")
           }
           else{
-            const booruId = response.data[randomArrayIndex(response.data)].id
+            const booruId = d[rollFromZero(d.length - 1)].id
             message.channel.sendMessage(config.booruPostUrl + booruId)
           }
-        })
-        .catch(function(response){
-          // console.log(response)
         })
       }
     }
