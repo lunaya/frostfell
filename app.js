@@ -11,6 +11,7 @@ const wantedItems = [ "Orokin", "Alertium", "Forma", "Catbrow" ] //alertium = ni
 
 //warframe alert id list 
 let alertIds = []
+let broadcastedIds = []
 
 //poll warframe API every 10 minutes
 function warframePoller(channel){
@@ -32,61 +33,65 @@ function warframePoller(channel){
 
         //check unique alert list for existing id
         if (!(alertIds.indexOf(thisAlertId) > -1)){
-          //add alert id to alerts array.  delete earliest id if array is 'full' at 10 numbers
-          alertIds.push(thisAlertId)
+          if (!(broadcastedIds.indexOf(thisAlertId) > -1)){
 
-          if(alertIds.length > 10){
-            alertIds.shift()
-          }
+            //add alert id to alerts array.  delete earliest id if array is 'full' at 10 numbers
+            alertIds.push(thisAlertId)
 
-          //parse rewards
-          const reward = alert.MissionInfo.missionReward
-
-          //only do things if alert has any rewards
-          if (reward.items || reward.countedItems){
-
-            // parse individual alert info
-            const mission = alert.MissionInfo.missionType.substring(3)
-            const level = (alert.MissionInfo.minEnemyLevel + alert.MissionInfo.maxEnemyLevel) / 2
-            const expireTime = alert.Expiry.$date.$numberLong
-            const minutesLeft = Math.round((expireTime - Date.now()) / 60 / 1000 )
-
-            //create arrays
-            let itemArray = []
-            let outputArray = []
-
-            //read in "Items" contained in rewards (bp's, helmets)
-            if (reward.items){
-              reward.items.map(function(item){
-                const thisItemName = item.substr(item.lastIndexOf("/")+1)
-                itemArray.push(thisItemName)
-              })
+            if(alertIds.length > 10){
+              alertIds.shift()
             }
 
-            //read in "countedItems" contained in rewards (numbers of mats)
-            if (reward.countedItems){
-              reward.countedItems.map(function(item){
-                const thisItemName = item.ItemType.substr(item.ItemType.lastIndexOf("/")+1) + "[" + item.ItemCount.toString() + "]"
-                itemArray.push(thisItemName)
+            //parse rewards
+            const reward = alert.MissionInfo.missionReward
+
+            //only do things if alert has any rewards
+            if (reward.items || reward.countedItems){
+
+              // parse individual alert info
+              const mission = alert.MissionInfo.missionType.substring(3)
+              const level = (alert.MissionInfo.minEnemyLevel + alert.MissionInfo.maxEnemyLevel) / 2
+              const expireTime = alert.Expiry.$date.$numberLong
+              const minutesLeft = Math.round((expireTime - Date.now()) / 60 / 1000 )
+
+              //create arrays
+              let itemArray = []
+              let outputArray = []
+
+              //read in "Items" contained in rewards (bp's, helmets)
+              if (reward.items){
+                reward.items.map(function(item){
+                  const thisItemName = item.substr(item.lastIndexOf("/")+1)
+                  itemArray.push(thisItemName)
+                })
+              }
+
+              //read in "countedItems" contained in rewards (numbers of mats)
+              if (reward.countedItems){
+                reward.countedItems.map(function(item){
+                  const thisItemName = item.ItemType.substr(item.ItemType.lastIndexOf("/")+1) + "[" + item.ItemCount.toString() + "]"
+                  itemArray.push(thisItemName)
+                })
+              }
+
+              //compare full list of this one alert's items against ones we want
+              itemArray.map(function(alertItem){
+                wantedItems.map(function(wantedItem){
+                  if(alertItem.includes(wantedItem)){
+                    outputArray.push(alertItem)
+                  }
+                })
               })
-            }
 
-            //compare full list of this one alert's items against ones we want
-            itemArray.map(function(alertItem){
-              wantedItems.map(function(wantedItem){
-                if(alertItem.includes(wantedItem)){
-                  outputArray.push(alertItem)
-                }
-              })
-            })
+              //simply adds a message to the final output if it exists
+              if (outputArray.length > 0){
+                const rewardOutput = outputArray.join(", ")
+                finalOutput += (mission + "[level " + level + "] - " + rewardOutput + " - " + minutesLeft + "m remaining\n")
+              }
 
-            //simply adds a message to the final output if it exists
-            if (outputArray.length > 0){
-              const rewardOutput = outputArray.join(", ")
-              finalOutput += (mission + "[level " + level + "] - " + rewardOutput + " - " + minutesLeft + "m remaining\n")
-            }
+            }//end of things to do if reward items exist
 
-          }//end of things to do if reward items exist
+          }//end of if alert was broadcasted before         
         }//end of if alert ID is new
         else {
           console.log("neat")
@@ -98,6 +103,11 @@ function warframePoller(channel){
 
       //check to see if anything was pushed to final output - if so, broadcast
       if (finalOutput.length > 0){
+        //if we're broadcasting something, add the id to the list and shore the length
+        broadcastedIds.push(thisAlertId)
+        if(broadcastedIds.length > 30){
+          broadcastedIds.shift()
+        }
         channel.sendMessage(finalOutput)
       }
 
@@ -142,7 +152,7 @@ function dRoll(sides, dice){
   }
   return rollsMsg + "-> Total: " + rollsTotal.toString()
 }
-
+ 
 client.on('message', message => {
   //act only if slash command - saves processing of every message
   if (message.content.charAt(0) === '/'){
@@ -323,7 +333,6 @@ client.on('message', message => {
         })
       }
     }
-
   }
 
 });
