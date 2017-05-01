@@ -17,6 +17,7 @@ let broadcastedIds = []
 function warframePoller(channel){
   setTimeout(function(){
 
+    //get the info
     axios({
       method: 'get',
       url: config.warframeGetUrl
@@ -31,7 +32,7 @@ function warframePoller(channel){
         //get alert id
         const thisAlertId = alert._id.$oid
 
-        //check unique alert list for existing id
+        //check unique alert list for existing id, skip if it exists
         if (!(alertIds.indexOf(thisAlertId) > -1)){
           if (!(broadcastedIds.indexOf(thisAlertId) > -1)){
 
@@ -123,24 +124,28 @@ function warframePoller(channel){
   }, 10 *1000*60)//delay, in minutes *math  //end of setTimeout
 } //end of warframepoller
 
-
+//integer checker
 function isNormalInteger(str){
     var n = Math.floor(Number(str))
     return String(n) === str && n >= 0
 }
 
+//removes punctuation from input and separates with what's given
 function regex (string, separator) {
     return String(string).replace(/[~`!@#$%^&*(){}\[\];:"'<,.>?\/\\|+=-]/g, separator)
 }
 
+//roll 1 to x
 function roller(max){
   return Math.floor((Math.random() * max) + 1)
 }
 
+//roll 0 to x
 function rollFromZero(max){
   return Math.floor((Math.random() * max))
 }
 
+//takes in number of dice and how many sides per each, adds them up and gives them back
 function dRoll(sides, dice){
   let rollsMsg = "Rolling " + dice + "d" + sides + " -> ";
   var rollsTotal = 0;
@@ -148,11 +153,13 @@ function dRoll(sides, dice){
     const thisRoll = roller(sides)
     rollsMsg += "[" + thisRoll + "]  "
     rollsTotal += thisRoll
-    // console.log(rollsTotal)
   }
   return rollsMsg + "-> Total: " + rollsTotal.toString()
 }
  
+/////////////////////
+//BOT CHAT COMMANDS//
+/////////////////////
 client.on('message', message => {
   //act only if slash command - saves processing of every message
   if (message.content.charAt(0) === '/'){
@@ -160,10 +167,12 @@ client.on('message', message => {
     var msgArray = message.content.split(" ")
     var firstWord = msgArray[0]
 
+    //your waifu is shit
     if (firstWord === '/waifu'){
       message.channel.sendMessage(config.waifu)
     }
 
+    //random number from 1-100
     if (firstWord === '/rng'){
       if (msgArray[1]){
         if (isNormalInteger(msgArray[1]) === false){
@@ -178,6 +187,7 @@ client.on('message', message => {
       }
     }
 
+    //default 1 20-sided die, can specify # of sides and # of dice.  ex /d 50 4   will roll 4x 50-sided dice, or 4d50
     if (firstWord === '/d'){
       if (!msgArray[1]){
         message.channel.sendMessage('Rolling 1d20 -> ' + roller(20))
@@ -202,6 +212,7 @@ client.on('message', message => {
       }
     }
 
+    //img search that includes imgur, google photos and photobucket.  custom google search api.
     if (firstWord === '/img'){
       //parse search terms
       msgArray.shift()
@@ -215,9 +226,12 @@ client.on('message', message => {
       })
       .then(function(response){
         const d = response.data
+
+        //if no results
         if (!d.items){
           message.channel.sendMessage("I couldn't find that! D:")
         }
+        //pick a random result
         else{
           const imgUrl = d.items[rollFromZero(d.items.length - 1)].link
           message.channel.sendMessage(imgUrl)
@@ -229,6 +243,7 @@ client.on('message', message => {
       })
     }
 
+    //finds a gif from gfycat API
     if (firstWord === '/gif'){
       //parse search terms
       msgArray.shift()
@@ -246,15 +261,20 @@ client.on('message', message => {
       .then(function(response){
         const d = response.data
 
+        //if no results
         if (!d.gfycats){
           message.channel.sendMessage("I couldn't find that! D:")
         }
+        //pick a random result
         else{
           const gfyCatId = d.gfycats[rollFromZero(d.gfycats.length - 1)].gfyId
           message.channel.sendMessage(config.gfyUrl + gfyCatId)
         }
       })
       .catch(function(response){
+      //if the first call fails, it's most likely because the API token which lasts 4 hours is out of date
+      //so, with the catch function we should instead send a call for a new API token
+      //and subsequently re-send the initial gif request
 
         const getKey = axios({
           method: 'post',
@@ -265,6 +285,7 @@ client.on('message', message => {
             "client_secret": config.gfyClientSecret
           }
         })
+        //upon receiving the new API token, we'll write it to the config file and proceed with /gif search
         .then(function(response){
 
           const gfyKey = response.data.access_token
@@ -277,12 +298,15 @@ client.on('message', message => {
               "Authorization": "Bearer " + config.gfyKey,
             }
           })
+          //finally, we search the original /gif command again
           .then(function(response){
             const d = response.data
 
+            //if no results
             if (!d.gfycats){
               message.channel.sendMessage("I couldn't find that! D:")
             }
+            //pick a random result
             else{
               const gfyCatId = d.gfycats[rollFromZero(d.gfycats.length - 1)].gfyId
               message.channel.sendMessage(config.gfyUrl + gfyCatId)
@@ -292,10 +316,13 @@ client.on('message', message => {
       })
     }
 
+    //danbooru search API.  can take up to two search terms.
+    //punctuation is allowed here for booru-esque search terms i.e. fate_(series)
     if (firstWord === '/lewd'){
       if (!msgArray[1]) {
         const searchTerms = ""
 
+        //default from a blank /lewd is to simply pick a random image from all of danbooru
         const getLewds = axios({
           method: 'get',
           url: config.booruGetUrl + searchTerms,
@@ -303,6 +330,7 @@ client.on('message', message => {
         .then(function(response){
           const d = response.data
 
+          //pick a random result
           const booruId = d[rollFromZero(d.length - 1)].id
           message.channel.sendMessage(config.booruPostUrl + booruId)
         })
@@ -311,6 +339,7 @@ client.on('message', message => {
         })
       }
       else {
+        //if there are search terms, we'll use those instead
         msgArray.shift()
         const searchTerms = msgArray.join('+')
 
@@ -323,9 +352,11 @@ client.on('message', message => {
         .then(function(response){
           const d = response.data
 
+          //if no results
           if (d.length == 0){
             message.channel.sendMessage("This tag doesn't exist D:a")
           }
+          //pick random result
           else{
             const booruId = d[rollFromZero(d.length - 1)].id
             message.channel.sendMessage(config.booruPostUrl + booruId)
@@ -337,6 +368,7 @@ client.on('message', message => {
 
 });
 
+//initialization and channel definitions
 client.on('ready', () => {
   console.log('I am ready!')
   const warframeChannel = client.channels.get(config.warframeChannel)
@@ -346,5 +378,6 @@ client.on('ready', () => {
   warframePoller(warframeChannel)
 });
 
+//client key and start
 const login = config.loginKey
 client.login(login)
