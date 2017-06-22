@@ -172,7 +172,7 @@ client.on('message', message => {
       message.channel.sendMessage(config.waifu)
     }
 
-    if (firstWorld === '/win'){
+    if (firstWord === '/win'){
       message.channel.sendMessage(config.win)
     }
 
