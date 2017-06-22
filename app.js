@@ -172,6 +172,10 @@ client.on('message', message => {
       message.channel.sendMessage(config.waifu)
     }
 
+    if (firstWorld === '/win'){
+      message.channel.sendMessage(config.win)
+    }
+
     //random number from 1-100
     if (firstWord === '/rng'){
       if (msgArray[1]){
