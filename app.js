@@ -172,6 +172,10 @@ client.on('message', message => {
       message.channel.sendMessage(config.waifu)
     }
 
+    if (firstWord === '/sugoi'){
+      message.channel.sendMessage(config.sugoi)
+    }
+
     if (firstWord === '/win'){
       message.channel.sendMessage(config.win)
     }
