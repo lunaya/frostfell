@@ -146,15 +146,26 @@ function rollFromZero(max){
 }
 
 //takes in number of dice and how many sides per each, adds them up and gives them back
-function dRoll(sides, dice){
+function dRoll(dice, sides){
+  if(dice > 100 || sides > 100){
+    return ";O;"
+  }
+  
   let rollsMsg = "Rolling " + dice + "d" + sides + " -> ";
   var rollsTotal = 0;
-  for (var i=1 ; i <= dice ; i++){
-    const thisRoll = roller(sides)
-    rollsMsg += "[" + thisRoll + "]  "
-    rollsTotal += thisRoll
+
+  if(dice > 1){
+    for (var i=1 ; i <= dice ; i++){
+      const thisRoll = roller(sides)
+      rollsMsg += "[" + thisRoll + "] "
+      rollsTotal += thisRoll
+    }
+    return rollsMsg + "-> Total: " + rollsTotal.toString()
   }
-  return rollsMsg + "-> Total: " + rollsTotal.toString()
+  else{
+    const thisRoll = roller(sides)
+    return rollsMsg + "[" + thisRoll + "]"
+  }
 }
  
 /////////////////////
@@ -201,22 +212,11 @@ client.on('message', message => {
         message.channel.sendMessage('Rolling 1d20 -> ' + roller(20))
       }
       else {
-        if (isNormalInteger(msgArray[1]) === false){
-          message.channel.sendMessage("I can't roll this D:")
-        }
-        else {
-          if (!msgArray[2]){
-            message.channel.sendMessage(dRoll(msgArray[1], 1))
-          }
-          else {
-            if (isNormalInteger(msgArray[2]) === false){
-              message.channel.sendMessage("I can't roll this D:")
-            }
-            else {
-              message.channel.sendMessage(dRoll(msgArray[1], msgArray[2]))
-            }
-          }
-        }
+        const rollNumbers = message.content.match(/^\/d ([1-9][0-9]*)d([1-9][0-9]*)/)
+        const numDice = parseInt(rollNumbers[1], 10)
+        const numSides = parseInt(rollNumbers[2], 10)
+        message.channel.sendMessage(dRoll(numDice, numSides))
+        
       }
     }
 
